@@ -1,7 +1,6 @@
 const path = require('path');
 // const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = {
@@ -9,8 +8,16 @@ module.exports = {
         index: './src/index.ts',
     },
     output: {
-        filename: '[name].bundle.js',
+        filename: 'js/[name].[contenthash].js',
         path: path.join(__dirname, '../dist'),
+    },
+    resolve: {
+        extensions: [".js", ".json", ".jsx", ".ts", ".tsx", ".d.ts", ".css", "sass", "scss"],
+        alias: {
+            "src": path.resolve(__dirname, '../src/'),
+            "#": path.resolve(__dirname, "../"),
+            "node_modules": path.join(__dirname, '../node_modules/'),
+        }
     },
     module: {
         rules: [
@@ -47,11 +54,18 @@ module.exports = {
             },
             {
                 test: /\.(png|svg|jpg|gif)$/,
-                use: ['file-loader', 'url-loader'],
+                loader: 'url-loader',
+                options: {
+                    limit: 8192,
+                    name: "img/[name].[contenthash].[ext]"
+                }
             },
             {
                 test: /\.(woff|woff2|eot|ttf|otf)$/,
-                use: ['file-loader'],
+                loader: 'file-loader',
+                options: {
+                    name: "file/[name].[contenthash].[ext]"
+                }
             },
             {
                 test: /\.(csv|tsv)$/,
@@ -71,14 +85,25 @@ module.exports = {
     plugins: [
         new HtmlWebpackPlugin({
             title: 'Webpack5 Demo',
+            inject: "body",
         }),
-        new MiniCssExtractPlugin(),
-        new CleanWebpackPlugin(),
-        // new webpack.optimize.CommonsChunkPlugin({
-        //     name: 'common'
-        // })
+        new MiniCssExtractPlugin({
+            filename: 'css/[name].[contenthash].css'
+        }),
     ],
-    resolve: {
-        extensions: ['.tsx', '.ts', '.js'],
-    },
+    optimization: {
+        moduleIds: 'deterministic',
+        runtimeChunk: 'single',
+        // 代码分离
+        splitChunks: {
+            cacheGroups: {
+                commons: {
+                    chunks: 'initial',
+                    minChunks: 2,
+                    minSize: 0,
+                    name: "commons",
+                },
+            }
+        }
+    }
 }
